@@ -1,7 +1,7 @@
-// core import 
+// core import
 import firebase from 'firebase/app';
 
-// only import what you need 
+// only import what you need, in this case firestore and auth 
 import 'firebase/firestore';
 import 'firebase/auth';
 
@@ -18,10 +18,37 @@ const config = {
 };
 
 
+export const createUserProfileDocument = async (userAuth, additionalData = null) => {
+    if(!userAuth) return;
+    
+    const userRef = firestore.doc(`users/${userAuth.uid}`);
+
+    const snapShot = await userRef.get();
+
+    if (!snapShot.exists) {
+        const { displayName, email } = userAuth;
+        const createdAt = new Date();
+
+        try {
+            await userRef.set({
+                displayName,
+                email,
+                createdAt,
+                ...additionalData
+            })
+        } catch (error){
+            console.log('error creating user ', error.message);
+        }
+    }
+
+    return userRef;
+
+}
+
 // init app with given config 
 firebase.initializeApp(config);
 
-// export vars for later use 
+// export vars for use in other modules 
 export const auth = firebase.auth();
 export const firestore = firebase.firestore();
 
@@ -31,7 +58,7 @@ provider.setCustomParameters({
     prompt: 'select_account'
 });
 
-// exported values
+
 export const signInWithGoogle = () => auth.signInWithPopup(provider);
 
 export default firebase;
